@@ -1,0 +1,67 @@
+from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Random import get_random_bytes
+import hashlib
+
+# 1. Criptografia Simétrica (AES)
+def criptografar_aes(texto, chave):
+    cipher = AES.new(chave, AES.MODE_EAX)
+    nonce = cipher.nonce
+    ciphertext, tag = cipher.encrypt_and_digest(texto.encode('utf-8'))
+    return nonce, ciphertext, tag
+
+def descriptografar_aes(nonce, ciphertext, tag, chave):
+    cipher = AES.new(chave, AES.MODE_EAX, nonce=nonce)
+    try:
+        texto_descriptografado = cipher.decrypt_and_verify(ciphertext, tag)
+        return texto_descriptografado.decode('utf-8')
+    except ValueError:
+        return "Erro na verificação da integridade da mensagem."
+
+# 2. Criptografia Assimétrica (RSA)
+def gerar_chaves_rsa():
+    chave_privada = RSA.generate(2048)
+    chave_publica = chave_privada.publickey()
+    return chave_privada, chave_publica
+
+def criptografar_rsa(texto, chave_publica):
+    cipher_rsa = PKCS1_OAEP.new(chave_publica)
+    encrypted_data = cipher_rsa.encrypt(texto.encode('utf-8'))
+    return encrypted_data
+
+def descriptografar_rsa(encrypted_data, chave_privada):
+    cipher_rsa = PKCS1_OAEP.new(chave_privada)
+    decrypted_data = cipher_rsa.decrypt(encrypted_data)
+    return decrypted_data.decode('utf-8')
+
+# 3. Função Hash (SHA-256)
+def gerar_hash(texto):
+    sha256 = hashlib.sha256()
+    sha256.update(texto.encode('utf-8'))
+    return sha256.hexdigest()
+
+# Testando a criptografia simétrica (AES)
+print("Criptografia Simétrica (AES):")
+chave_aes = get_random_bytes(16)  # Chave AES de 128 bits
+texto_original = "Este é um texto confidencial para criptografar."
+nonce, ciphertext, tag = criptografar_aes(texto_original, chave_aes)
+texto_descriptografado = descriptografar_aes(nonce, ciphertext, tag, chave_aes)
+print(f"Texto original: {texto_original}")
+print(f"Texto descriptografado: {texto_descriptografado}\n")
+
+# Testando a criptografia assimétrica (RSA)
+print("Criptografia Assimétrica (RSA):")
+chave_privada, chave_publica = gerar_chaves_rsa()
+texto_rsa = "Mensagem para criptografar com RSA."
+encrypted_data = criptografar_rsa(texto_rsa, chave_publica)
+decrypted_data = descriptografar_rsa(encrypted_data, chave_privada)
+print(f"Texto original: {texto_rsa}")
+print(f"Texto descriptografado: {decrypted_data}\n")
+
+# Testando a função Hash (SHA-256)
+print("Função Hash (SHA-256):")
+texto_hash = "Texto para gerar o hash."
+hash_value = gerar_hash(texto_hash)
+print(f"Texto original: {texto_hash}")
+print(f"Valor do hash SHA-256: {hash_value}")
